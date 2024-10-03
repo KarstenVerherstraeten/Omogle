@@ -1,54 +1,113 @@
-.Logo h1 {
-	margin-top: 30px;
-	font-size: 1.5em;
-
-	color: red;
-	font-family: "ethnocentric", sans-serif;
-	font-weight: 700;
-	font-style: normal;
-	text-align: center;
-}
-
-/* Video styling */
-.LocalVideo{
+.container {
     display: flex;
-    flex-wrap: wrap;
     flex-direction: column;
-}
-.RemoteVideo{
-    display: flex;
-    flex-wrap: wrap;
-    flex-direction: column;
-}
-
-.VideoFeeds{
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-evenly;
-    margin: 0 auto;
-    
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #6e45e2, #88d3ce);
+    font-family: "ethnocentric", sans-serif;
 }
 
-/* Chatroom styling */
-.Messages{
+.header {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.logo {
+    font-size: 2rem;
+    color: white;
+    letter-spacing: 0.2rem;
+}
+
+.videoSection {
     display: flex;
-    flex-wrap: wrap;
-    flex-direction: column;
-    justify-content: space-between;
-    margin-top: 40px;
+    justify-content: center;
+    gap: 30px;
+    margin-bottom: 20px;
+}
+
+.videoContainer {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+}
+
+.videoTitle {
+    font-size: 1.2rem;
+    color: white;
+    margin-bottom: 10px;
+}
+
+.localVideo, .remoteVideo {
+    width: 300px;
+    border-radius: 10px;
+    border: 2px solid white;
+}
+
+.chatSection {
     width: 100%;
-    height: 300px;
-    border: 1px solid black;
+    max-width: 600px;
+    background-color: rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    border-radius: 15px;
 }
 
-.Message{
-    margin-top: 10px;
-    display: flex;
-    flex-direction: row;
+.messagesContainer {
+    min-height: 200px;
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 15px;
+    border-radius: 10px;
+    margin-bottom: 15px;
 }
-.Message input{
-    width: 100%;
-    height: 40px;
-    border: 1px solid black;
-    margin-top: 10px;
+
+.messageInputContainer {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.messageInput {
+    flex-grow: 1;
+    padding: 10px;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+}
+
+.sendButton {
+    background-color: #ff5a5f;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+.sendButton:hover {
+    background-color: #ff7e7e;
+}
+
+@media (max-width: 768px) {
+    .logo {
+        font-size: 2.5rem;
+    }
+
+    .videoSection {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .localVideo, .remoteVideo {
+        width: 100%;
+    }
+
+    .chatSection {
+        padding: 15px;
+    }
+
+    .sendButton {
+        padding: 8px 15px;
+    }
 }
