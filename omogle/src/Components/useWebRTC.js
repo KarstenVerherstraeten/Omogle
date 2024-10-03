@@ -1,5 +1,3 @@
-// WebRTC Hook by chatGPT: https://chatgpt.com/share/66fd3912-ce74-800f-bfa4-0469e560a4de
-
 import { useEffect, useState } from "react";
 
 export const useWebRTC = (socketUrl) => {
@@ -8,6 +6,7 @@ export const useWebRTC = (socketUrl) => {
   const [remoteStream, setRemoteStream] = useState(null);
   const [socket, setSocket] = useState(null);
   const [isInitiator, setIsInitiator] = useState(false);
+  const [messages, setMessages] = useState([]);  // <--- Add this to handle chat messages
 
   useEffect(() => {
     console.log("Initializing WebSocket connection to:", socketUrl);
@@ -66,6 +65,10 @@ export const useWebRTC = (socketUrl) => {
       if (data.type === "ice-candidate") {
         console.log("Handling ICE candidate");
         handleNewICECandidate(data.candidate);
+      }
+      if (data.type === "chat") {  // <--- Handling chat messages
+        console.log("Received chat message:", data.message);
+        handleChatMessage(data.message, "Other");
       }
     };
 
@@ -146,5 +149,20 @@ export const useWebRTC = (socketUrl) => {
     };
   }, [socketUrl, isInitiator]);
 
-  return { localStream, remoteStream };
+  // Chat message handlers
+
+  const handleChatMessage = (message, sender) => {
+    setMessages((prevMessages) => [...prevMessages, { sender, text: message }]);
+  };
+
+  const sendMessage = (message) => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(JSON.stringify({ type: "chat", message }));
+      handleChatMessage(message, "You");
+    } else {
+      console.error("WebSocket is not open. Cannot send message.");
+    }
+  };
+
+  return { localStream, remoteStream, sendMessage, messages };
 };
