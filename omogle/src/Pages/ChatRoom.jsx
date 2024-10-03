@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { useWebRTC } from "../Components/useWebRTC";
 import style from "../Modules/ChatRoom.module.css";
 
-const VideoChat = ({ socketUrl }) => {
-  const { localStream, remoteStream, sendMessage, messages } = useWebRTC(socketUrl);
+const VideoChat = () => {
+	const socketUrl = "wss://omogle.onrender.com"; // <-- Define your WebSocket URL here
+	const { localStream, remoteStream, sendMessage, messages } = useWebRTC(socketUrl);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const [currentMessage, setCurrentMessage] = useState("");
