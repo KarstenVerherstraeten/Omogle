@@ -9,7 +9,9 @@ wss.on('connection', (ws) => {
   ws.userId = userId;
 
   ws.on('message', (message) => {
-    console.log(`Received from ${userId}:`, message);
+    // If the message is an object, stringify it for better readability
+    console.log(`Received from ${userId}:`, typeof message === 'string' ? message : JSON.stringify(message));
+    
     // Broadcast the message to all connected clients
     wss.clients.forEach(client => {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
