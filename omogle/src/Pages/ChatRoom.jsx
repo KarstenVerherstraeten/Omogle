@@ -38,7 +38,7 @@ const VideoChat = () => {
         <div className={style.videoSection}>
           <div className={style.videoContainer}>
             <h2 className={style.videoTitle}>Local Video</h2>
-            <video
+            <video 
               ref={localVideoRef}
               autoPlay
               playsInline
