@@ -1,32 +1,26 @@
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-wss.on('connection', (ws, req) => {
-  // Log when a new connection is made
-  console.log(`New connection from ${req.socket.remoteAddress}`);
+wss.on('connection', (ws) => {
+  const userId = uuidv4();
+  console.log(`User connected: ${userId}`);
+  ws.userId = userId;
 
-  // When a message is received from the client
   ws.on('message', (message) => {
-    console.log(`Received message from ${req.socket.remoteAddress}: ${message}`);
-
+    console.log(`Received from ${userId}:`, message);
     // Broadcast the message to all connected clients
-    wss.clients.forEach((client) => {
+    wss.clients.forEach(client => {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
+        client.send(JSON.stringify({ userId, message }));
       }
     });
   });
 
-  // Log when the client disconnects
   ws.on('close', () => {
-    console.log(`Connection from ${req.socket.remoteAddress} closed`);
-  });
-
-  // Log any errors
-  ws.on('error', (error) => {
-    console.error(`Error with connection from ${req.socket.remoteAddress}:`, error);
+    console.log(`User disconnected: ${userId}`);
   });
 });
 
-console.log('WebSocket server is running on ws://localhost:8080');
+console.log('WebSocket server is running on wss://omogle.onrender.com');
