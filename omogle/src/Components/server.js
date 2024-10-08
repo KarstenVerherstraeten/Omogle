@@ -1,23 +1,26 @@
 const WebSocket = require('ws');
+const { v4: uuidv4 } = require('uuid');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
 wss.on('connection', (ws) => {
-  console.log('User connected');
+  const userId = uuidv4();
+  console.log(`User connected: ${userId}`);
+  ws.userId = userId;
 
   ws.on('message', (message) => {
-    console.log('Received:', message);
+    console.log(`Received from ${userId}:`, message);
     // Broadcast the message to all connected clients
     wss.clients.forEach(client => {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
+        client.send(JSON.stringify({ userId, message }));
       }
     });
   });
 
   ws.on('close', () => {
-    console.log('User disconnected');
+    console.log(`User disconnected: ${userId}`);
   });
 });
 
-console.log('WebSocket server is running on ws://localhost:8080');
+console.log('WebSocket server is running on wss://omogle.onrender.com');
