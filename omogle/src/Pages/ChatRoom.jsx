@@ -2,11 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { useWebRTC } from "../Components/useWebRTC";
 import style from "../Modules/ChatRoom.module.css";
 
-const VideoChat = () => {
-	const socketUrl = "wss://omogle.onrender.com"; // <-- Define your WebSocket URL here
-	const { localStream, remoteStream, sendMessage, messages } = useWebRTC(socketUrl);
+const VideoChat = ({ userId, roomId }) => {
+  const socketUrl = "wss://omogle.onrender.com"; // Define your WebSocket URL
+  const { localStream, remoteStream, sendMessage, messages, connectToRoom } = useWebRTC(socketUrl);
+  
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
+  
   const [currentMessage, setCurrentMessage] = useState("");
 
   useEffect(() => {
@@ -21,9 +23,16 @@ const VideoChat = () => {
     }
   }, [remoteStream]);
 
+  // Handle WebSocket connection and joining a room
+  useEffect(() => {
+    if (roomId) {
+      connectToRoom(roomId, userId);
+    }
+  }, [roomId, userId, connectToRoom]);
+
   const handleSendMessage = () => {
     if (currentMessage.trim()) {
-      sendMessage(currentMessage);
+      sendMessage(currentMessage); // Send the message via WebSocket
       setCurrentMessage(""); // Clear the input after sending
     }
   };
