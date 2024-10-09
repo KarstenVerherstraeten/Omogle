@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export const useWebRTC = (socketUrl) => {
   const [peerConnection, setPeerConnection] = useState(null);
@@ -6,12 +6,21 @@ export const useWebRTC = (socketUrl) => {
   const [remoteStream, setRemoteStream] = useState(null);
   const [socket, setSocket] = useState(null);
   const [isInitiator, setIsInitiator] = useState(false);
-  const [messages, setMessages] = useState([]);  // <--- Add this to handle chat messages
+  const [messages, setMessages] = useState([]);
+  const [roomId, setRoomId] = useState(null); // Room ID to associate users
+  const [userId, setUserId] = useState(null); // User ID for this client
+  const socketRef = useRef(null); // To avoid creating new socket each render
 
   useEffect(() => {
     console.log("Initializing WebSocket connection to:", socketUrl);
     const newSocket = new WebSocket(socketUrl);
+    socketRef.current = newSocket;
     setSocket(newSocket);
+
+    newSocket.onopen = () => {
+      console.log("WebSocket connection opened");
+      newSocket.send(JSON.stringify({ type: "join", roomId }));
+    };
 
     const config = {
       iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
@@ -35,6 +44,7 @@ export const useWebRTC = (socketUrl) => {
       setRemoteStream(event.streams[0]);
     };
 
+    // Get user media (video and audio)
     navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
@@ -49,7 +59,6 @@ export const useWebRTC = (socketUrl) => {
       })
       .catch((error) => console.error("Error getting user media", error));
 
-    // WebSocket handling
     newSocket.onmessage = (message) => {
       const data = JSON.parse(message.data);
       console.log("WebSocket message received:", data);
@@ -58,72 +67,31 @@ export const useWebRTC = (socketUrl) => {
         console.log("Handling offer");
         handleOffer(data.offer);
       }
+
       if (data.type === "answer") {
         console.log("Handling answer");
         handleAnswer(data.answer);
       }
+
       if (data.type === "ice-candidate") {
         console.log("Handling ICE candidate");
         handleNewICECandidate(data.candidate);
       }
-      if (data.type === "chat") {  // <--- Handling chat messages
+
+      if (data.type === "chat") {
         console.log("Received chat message:", data.message);
         handleChatMessage(data.message, "Other");
       }
-    };
 
-    const handleOffer = async (offer) => {
-      try {
-        console.log("Setting remote description with offer:", offer);
-        if (newPeerConnection.signalingState === "closed") return;
-        await newPeerConnection.setRemoteDescription(new RTCSessionDescription(offer));
-        const answer = await newPeerConnection.createAnswer();
-        console.log("Creating and sending answer:", answer);
-        await newPeerConnection.setLocalDescription(answer);
-        newSocket.send(JSON.stringify({ type: "answer", answer }));
-      } catch (error) {
-        console.error("Error handling offer", error);
+      if (data.type === "user-id") {
+        console.log("Received user ID:", data.userId);
+        setUserId(data.userId); // Set the user ID when connected
       }
-    };
 
-    const handleAnswer = async (answer) => {
-      try {
-        console.log("Setting remote description with answer:", answer);
-        if (newPeerConnection.signalingState === "closed") return;
-        await newPeerConnection.setRemoteDescription(new RTCSessionDescription(answer));
-      } catch (error) {
-        console.error("Error handling answer", error);
+      if (data.type === "room-id") {
+        console.log("Received room ID:", data.roomId);
+        setRoomId(data.roomId); // Set the room ID
       }
-    };
-
-    const handleNewICECandidate = async (candidate) => {
-      try {
-        console.log("Adding received ICE candidate:", candidate);
-        if (newPeerConnection.signalingState !== "closed") {
-          await newPeerConnection.addIceCandidate(new RTCIceCandidate(candidate));
-        }
-      } catch (error) {
-        console.error("Error adding received ICE candidate", error);
-      }
-    };
-
-    const createOffer = async () => {
-      try {
-        if (newPeerConnection.signalingState !== "closed") {
-          console.log("Creating offer");
-          const offer = await newPeerConnection.createOffer();
-          await newPeerConnection.setLocalDescription(offer);
-          console.log("Sending offer:", offer);
-          newSocket.send(JSON.stringify({ type: "offer", offer }));
-        }
-      } catch (error) {
-        console.error("Error creating offer", error);
-      }
-    };
-
-    newSocket.onopen = () => {
-      console.log("WebSocket connection opened");
-      newSocket.send(JSON.stringify({ type: "join" }));
     };
 
     // Handle WebSocket message to determine initiator
@@ -147,10 +115,59 @@ export const useWebRTC = (socketUrl) => {
       newSocket.close();
       if (newPeerConnection) newPeerConnection.close();
     };
-  }, [socketUrl, isInitiator]);
+  }, [socketUrl, isInitiator, roomId]);
 
-  // Chat message handlers
+  // WebRTC signaling functions
+  const handleOffer = async (offer) => {
+    try {
+      console.log("Setting remote description with offer:", offer);
+      if (peerConnection.signalingState === "closed") return;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+      const answer = await peerConnection.createAnswer();
+      console.log("Creating and sending answer:", answer);
+      await peerConnection.setLocalDescription(answer);
+      socket.send(JSON.stringify({ type: "answer", answer }));
+    } catch (error) {
+      console.error("Error handling offer", error);
+    }
+  };
 
+  const handleAnswer = async (answer) => {
+    try {
+      console.log("Setting remote description with answer:", answer);
+      if (peerConnection.signalingState === "closed") return;
+      await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    } catch (error) {
+      console.error("Error handling answer", error);
+    }
+  };
+
+  const handleNewICECandidate = async (candidate) => {
+    try {
+      console.log("Adding received ICE candidate:", candidate);
+      if (peerConnection.signalingState !== "closed") {
+        await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+      }
+    } catch (error) {
+      console.error("Error adding received ICE candidate", error);
+    }
+  };
+
+  const createOffer = async () => {
+    try {
+      if (peerConnection.signalingState !== "closed") {
+        console.log("Creating offer");
+        const offer = await peerConnection.createOffer();
+        await peerConnection.setLocalDescription(offer);
+        console.log("Sending offer:", offer);
+        socket.send(JSON.stringify({ type: "offer", offer }));
+      }
+    } catch (error) {
+      console.error("Error creating offer", error);
+    }
+  };
+
+  // Chat functionality
   const handleChatMessage = (message, sender) => {
     setMessages((prevMessages) => [...prevMessages, { sender, text: message }]);
   };
@@ -164,5 +181,5 @@ export const useWebRTC = (socketUrl) => {
     }
   };
 
-  return { localStream, remoteStream, sendMessage, messages };
+  return { localStream, remoteStream, sendMessage, messages, roomId, userId };
 };
